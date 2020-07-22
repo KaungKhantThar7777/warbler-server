@@ -3,75 +3,29 @@ const User = require("../models/user");
 const path = require("path");
 
 const signup = async (req, res, next) => {
-  console.log(req.body, req.files);
+  if (req.file) {
+    req.body.profileImageUrl = req.file.buffer;
+  }
   try {
-    let user = await User.create({
-      email: req.body.email,
-      password: req.body.password,
-      username: req.body.username,
+    let user = await User.create(req.body);
+    console.log(user);
+    const { _id, email, username, profileImageUrl } = user;
+    debugger;
+    const token = jwt.sign({ _id, email, username }, process.env.JWT_SECRET);
+    res.status(200).json({
+      _id,
+      token,
+      email,
+      username,
+      profileImageUrl,
     });
-    const { _id, email, username } = user;
-    if (req.files !== null) {
-      const { file } = req.files;
-      if (!file.mimetype.startsWith("image")) {
-        return next({ status: 400, message: "Please upload an image" });
-      }
-
-      file.name = `photo_${_id}${path.parse(file.name).ext}`;
-
-      file.mv(`public/uploads/${file.name}`, async (err) => {
-        if (err) {
-          return next({ status: 400, message: "Uploading photo failed" });
-        }
-
-        try {
-          user = await User.findByIdAndUpdate(
-            _id,
-            {
-              profileImageUrl: file.name,
-            },
-            {
-              runValidators: true,
-              new: true,
-            }
-          );
-          const token = jwt.sign(
-            { _id, email, username, profileImageUrl: user.profileImageUrl },
-            process.env.JWT_SECRET
-          );
-          res.status(200).json({
-            _id,
-            token,
-            email,
-            username,
-            profileImageUrl: user.profileImageUrl,
-          });
-        } catch (err) {
-          if (err.code === 11000) {
-            return next({
-              status: 400,
-              message: "Sorry, that email is already taken",
-            });
-          }
-
-          console.log(err.message, err);
-          next({
-            status: 400,
-            message: err.message,
-          });
-        }
-      });
-    } else {
-      const token = jwt.sign({ _id, email, username }, process.env.JWT_SECRET);
-      res.status(200).json({
-        _id,
-        token,
-        email,
-        username,
+  } catch (err) {
+    if (err.code === 11000) {
+      return next({
+        status: 400,
+        message: "Sorry, this email is already taken",
       });
     }
-  } catch (err) {
-    console.log(err);
     next({
       status: 400,
       message: err.message,
@@ -80,7 +34,7 @@ const signup = async (req, res, next) => {
 };
 
 const signin = async (req, res, next) => {
-  console.log(req.body, req.files);
+  console.log(req.body);
   try {
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
@@ -101,7 +55,6 @@ const signin = async (req, res, next) => {
         _id,
         email,
         username,
-        profileImageUrl,
       },
       process.env.JWT_SECRET
     );
@@ -114,7 +67,6 @@ const signin = async (req, res, next) => {
       profileImageUrl,
     });
   } catch (err) {
-    console.log(err);
     next({ status: 400, message: "Invalid email/password." });
   }
 };

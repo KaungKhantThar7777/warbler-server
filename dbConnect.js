@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-mongoose.set("debug", true);
 const connect = () => {
   mongoose
     .connect(process.env.MONGO_URI || process.env.MONGO_DEV, {

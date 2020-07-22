@@ -9,9 +9,13 @@ const getUsers = async (req, res) => {
 const getMe = async (req, res) => {
   const user = await User.findById(req.params.id);
 
+  console.log(user);
+
   res.status(200).json({ user });
 };
 module.exports = {
   getUsers,
   getMe,
 };
+
+
