@@ -3,6 +3,7 @@ const User = require("../models/user");
 const path = require("path");
 
 const signup = async (req, res, next) => {
+  console.log(req.body, req.profileImageUrl);
   if (req.file) {
     req.body.profileImageUrl = req.file.buffer;
   }
